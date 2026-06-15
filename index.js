@@ -11,7 +11,7 @@ app.use(express.json());
 
 app.use(cors({
     origin: process.env.NODE_ENV === 'production' 
-        ? 'https://seu-frontend.vercel.app'  
+        ? 'https://sistema-de-monitoramento-front-end.vercel.app/'  
         : 'http://localhost:3000'
 }));
 
