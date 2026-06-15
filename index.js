@@ -12,8 +12,9 @@ app.use(express.json());
 const allowedOrigins = [
   'http://localhost:3000',
   'https://sistema-de-monitoramento-front-end-ochre.vercel.app',
-  'https://sistema-de-monitoramento-front-end.vercel.app'
-]
+  'https://sistema-de-monitoramento-front-end.vercel.app',
+  'https://sistema-de-monitoramento-front-iword7dpt-ca2sys-projects.vercel.app'
+];
 
 app.use(cors({
   origin: function(origin, callback) {
