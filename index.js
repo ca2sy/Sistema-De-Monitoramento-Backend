@@ -9,11 +9,21 @@ const port = process.env.PORT || 3001;
 app.use(express.json());
 
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://sistema-de-monitoramento-front-end-ochre.vercel.app',
+  'https://sistema-de-monitoramento-front-end.vercel.app'
+]
+
 app.use(cors({
-    origin: process.env.NODE_ENV === 'production' 
-        ? 'https://sistema-de-monitoramento-front-end.vercel.app/'  
-        : 'http://localhost:3000'
-}));
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}))
 
 app.use("/aquisicoes", require("./routes/aquisicoesRoutes"));
 app.use("/", require("./routes/tabelasApoioRoutes"));
