@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model aquisicao {
+  codigo            String          @id @db.VarChar(80)
+  tipoAquisicaoId   Int
+  tipoAquisicao     tipoAquisicao   @relation(fields: [tipoAquisicaoId], references: [id])
+  metodoAquisicaoId Int
+  metodoAquisicao   metodoAquisicao @relation(fields: [metodoAquisicaoId], references: [id])
+  etapaAquisicaoId  Int
+  etapaAquisicao    etapaAquisicao  @relation(fields: [etapaAquisicaoId], references: [id])
+  descricaoObjetoNome String        @db.VarChar(100)
+  valorEstimado     Decimal
+  responsavel       String          @db.VarChar(200)
+  dataLimite        DateTime
+  statusAquisicaoId Int
+  statusAquisicao   statusAquisicao @relation(fields: [statusAquisicaoId], references: [id])
+  secretariaId      Int
+  secretaria        secretaria      @relation(fields: [secretariaId], references: [id])
+  aquisicaoChecklists aquisicaoChecklist[]
+  cancelado          Boolean   @default(false)
+  justificativaCancelamento String? @db.VarChar(500)
+}
+
+model tipoAquisicao {
+  id         Int         @id @default(autoincrement())
+  nome       String      @db.VarChar(255)
+  aquisicoes aquisicao[]
+}
+
+model metodoAquisicao {
+  id         Int         @id @default(autoincrement())
+  nome       String      @db.VarChar(80)
+  aquisicoes aquisicao[]
+}
+
+model etapaAquisicao {
+  id             Int            @id @default(autoincrement())
+  nome           String         @db.VarChar(100)
+  ordem          Int
+  checklistItems checklistItem[]
+  aquisicoes     aquisicao[]
+}
+
+model projeto{
+  id         Int         @id @default(autoincrement())
+  nome       String      @db.VarChar(100)
+
+}
+
+model checklistItem {
+  id               Int            @id @default(autoincrement())
+  descricao        String         @db.VarChar(300)
+  etapaAquisicaoId Int
+  etapaAquisicao   etapaAquisicao @relation(fields: [etapaAquisicaoId], references: [id])
+  respostas        aquisicaoChecklist[]
+}
+
+model aquisicaoChecklist {
+  id              Int           @id @default(autoincrement())
+  aquisicaoCodigo String
+  aquisicao       aquisicao     @relation(fields: [aquisicaoCodigo], references: [codigo])
+  checklistItemId Int
+  checklistItem   checklistItem @relation(fields: [checklistItemId], references: [id])
+  concluido       Boolean       @default(false)
+  concluidoEm     DateTime?
+
+  @@unique([aquisicaoCodigo, checklistItemId])
+}
+
+model statusAquisicao {
+  id         Int         @id @default(autoincrement())
+  nome       String      @db.VarChar(100)
+  aquisicoes aquisicao[]
+}
+
+model secretaria {
+  id         Int         @id @default(autoincrement())
+  nome       String      @db.VarChar(100)
+  aquisicoes aquisicao[]
+}
