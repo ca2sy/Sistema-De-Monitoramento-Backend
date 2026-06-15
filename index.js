@@ -2,13 +2,17 @@ require("dotenv").config();
 const express = require("express");
 const cors = require('cors');
 const app = express();
-const port = 3001;
+
+
+const port = process.env.PORT || 3001;
 
 app.use(express.json());
-app.use(cors());
+
 
 app.use(cors({
-    origin: 'http://localhost:3000'
+    origin: process.env.NODE_ENV === 'production' 
+        ? 'https://seu-frontend.vercel.app'  
+        : 'http://localhost:3000'
 }));
 
 app.use("/aquisicoes", require("./routes/aquisicoesRoutes"));
