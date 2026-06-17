@@ -7,71 +7,84 @@ datasource db {
   provider = "postgresql"
 }
 
-model aquisicao {
-  codigo            String          @id @db.VarChar(80)
-  tipoAquisicaoId   Int
-  tipoAquisicao     tipoAquisicao   @relation(fields: [tipoAquisicaoId], references: [id])
-  metodoAquisicaoId Int
-  metodoAquisicao   metodoAquisicao @relation(fields: [metodoAquisicaoId], references: [id])
-  etapaAquisicaoId  Int
-  etapaAquisicao    etapaAquisicao  @relation(fields: [etapaAquisicaoId], references: [id])
-  descricaoObjetoNome String        @db.VarChar(100)
-  valorEstimado     Decimal
-  responsavel       String          @db.VarChar(200)
-  dataLimite        DateTime
-  statusAquisicaoId Int
-  statusAquisicao   statusAquisicao @relation(fields: [statusAquisicaoId], references: [id])
-  secretariaId      Int
-  secretaria        secretaria      @relation(fields: [secretariaId], references: [id])
-  aquisicaoChecklists aquisicaoChecklist[]
-  cancelado          Boolean   @default(false)
-  justificativaCancelamento String? @db.VarChar(500)
+model projeto {
+  id         Int             @id @default(autoincrement())
+  nome       String          @db.VarChar(200)
+  descricao  String?         @db.VarChar(500)
+  ativo      Boolean         @default(true)
+  criadoEm   DateTime        @default(now())
+  tipos      tipoAquisicao[]
+  aquisicoes aquisicao[]
 }
 
+
 model tipoAquisicao {
-  id         Int         @id @default(autoincrement())
-  nome       String      @db.VarChar(255)
+  id         Int              @id @default(autoincrement())
+  nome       String           @db.VarChar(255)
+  projetoId  Int
+  projeto    projeto          @relation(fields: [projetoId], references: [id])
+  etapas     etapaAquisicao[]
   aquisicoes aquisicao[]
+}
+
+model etapaAquisicao {
+  id              Int             @id @default(autoincrement())
+  nome            String          @db.VarChar(100)
+  ordem           Int
+  tipoAquisicaoId Int
+  tipoAquisicao   tipoAquisicao   @relation(fields: [tipoAquisicaoId], references: [id])
+  subEtapas       subEtapa[]
+  aquisicoes      aquisicao[]
+}
+
+model subEtapa {
+  id               Int            @id @default(autoincrement())
+  descricao        String         @db.VarChar(300)
+  ordem            Int            @default(0)
+  etapaAquisicaoId Int
+  etapaAquisicao   etapaAquisicao @relation(fields: [etapaAquisicaoId], references: [id])
+  respostas        aquisicaoChecklist[]
+}
+
+model aquisicao {
+  codigo                    String               @id @db.VarChar(80)
+  projetoId                 Int
+  projeto                   projeto              @relation(fields: [projetoId], references: [id])
+  tipoAquisicaoId           Int
+  tipoAquisicao             tipoAquisicao        @relation(fields: [tipoAquisicaoId], references: [id])
+  metodoAquisicaoId         Int
+  metodoAquisicao           metodoAquisicao      @relation(fields: [metodoAquisicaoId], references: [id])
+  etapaAquisicaoId          Int
+  etapaAquisicao            etapaAquisicao       @relation(fields: [etapaAquisicaoId], references: [id])
+  descricaoObjetoNome       String               @db.VarChar(100)
+  valorEstimado             Decimal
+  responsavel               String               @db.VarChar(200)
+  dataLimite                DateTime
+  statusAquisicaoId         Int
+  statusAquisicao           statusAquisicao      @relation(fields: [statusAquisicaoId], references: [id])
+  secretariaId              Int
+  secretaria                secretaria           @relation(fields: [secretariaId], references: [id])
+  cancelado                 Boolean              @default(false)
+  justificativaCancelamento String?              @db.VarChar(500)
+  aquisicaoChecklists       aquisicaoChecklist[]
+}
+
+model aquisicaoChecklist {
+  id          Int       @id @default(autoincrement())
+  aquisicaoCodigo String
+  aquisicao   aquisicao @relation(fields: [aquisicaoCodigo], references: [codigo])
+  subEtapaId  Int
+  subEtapa    subEtapa  @relation(fields: [subEtapaId], references: [id])
+  concluido   Boolean   @default(false)
+  concluidoEm DateTime?
+
+  @@unique([aquisicaoCodigo, subEtapaId])
 }
 
 model metodoAquisicao {
   id         Int         @id @default(autoincrement())
   nome       String      @db.VarChar(80)
   aquisicoes aquisicao[]
-}
-
-model etapaAquisicao {
-  id             Int            @id @default(autoincrement())
-  nome           String         @db.VarChar(100)
-  ordem          Int
-  checklistItems checklistItem[]
-  aquisicoes     aquisicao[]
-}
-
-model projeto{
-  id         Int         @id @default(autoincrement())
-  nome       String      @db.VarChar(100)
-
-}
-
-model checklistItem {
-  id               Int            @id @default(autoincrement())
-  descricao        String         @db.VarChar(300)
-  etapaAquisicaoId Int
-  etapaAquisicao   etapaAquisicao @relation(fields: [etapaAquisicaoId], references: [id])
-  respostas        aquisicaoChecklist[]
-}
-
-model aquisicaoChecklist {
-  id              Int           @id @default(autoincrement())
-  aquisicaoCodigo String
-  aquisicao       aquisicao     @relation(fields: [aquisicaoCodigo], references: [codigo])
-  checklistItemId Int
-  checklistItem   checklistItem @relation(fields: [checklistItemId], references: [id])
-  concluido       Boolean       @default(false)
-  concluidoEm     DateTime?
-
-  @@unique([aquisicaoCodigo, checklistItemId])
 }
 
 model statusAquisicao {
@@ -84,4 +97,13 @@ model secretaria {
   id         Int         @id @default(autoincrement())
   nome       String      @db.VarChar(100)
   aquisicoes aquisicao[]
+  // usuarios   usuario[]
+}
+
+model usuario {
+  id Int @id @default(autoincrement())
+  nome String @db.VarChar(250)
+  senha String @db.VarChar(250)
+  // secretariaId Int
+  // secretaria secretaria @relation(fields: [secretariaId], references: [id])
 }

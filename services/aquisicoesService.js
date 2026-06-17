@@ -19,16 +19,24 @@ const listarAquisicoes = async (req, res) => {
         }),
       },
       include: {
+        projeto: true,
         tipoAquisicao: true,
         metodoAquisicao: true,
-        etapaAquisicao: true,
+        etapaAquisicao: {
+          include: { subEtapas: true }
+        },
         statusAquisicao: true,
         secretaria: true,
         aquisicaoChecklists: {
-          include: { checklistItem: { include: { etapaAquisicao: true } } }
+          include: {
+            subEtapa: {
+              include: { etapaAquisicao: true }
+            }
+          }
         }
       }
     })
+
     const aquisicoesCom = await Promise.all(aquisicoes.map(async (a) => {
       if (a.cancelado) return a
 
@@ -57,7 +65,7 @@ const listarAquisicoes = async (req, res) => {
 const cadastrarAquisicao = async (req, res) => {
   try {
     const camposObrigatorios = [
-      'codigo', 'tipoAquisicaoId', 'metodoAquisicaoId', 'etapaAquisicaoId',
+      'codigo', 'projetoId', 'tipoAquisicaoId', 'metodoAquisicaoId', 'etapaAquisicaoId',
       'descricaoObjetoNome', 'valorEstimado', 'responsavel', 'dataLimite',
       'statusAquisicaoId', 'secretariaId'
     ]
@@ -67,7 +75,7 @@ const cadastrarAquisicao = async (req, res) => {
     }
 
     const {
-      codigo, tipoAquisicaoId, metodoAquisicaoId, etapaAquisicaoId,
+      codigo, projetoId, tipoAquisicaoId, metodoAquisicaoId, etapaAquisicaoId,
       descricaoObjetoNome, valorEstimado, responsavel, dataLimite,
       statusAquisicaoId, secretariaId
     } = req.body
@@ -75,39 +83,48 @@ const cadastrarAquisicao = async (req, res) => {
     const novaAquisicao = await prisma.aquisicao.create({
       data: {
         codigo,
-        tipoAquisicaoId,
-        metodoAquisicaoId,
-        etapaAquisicaoId,
+        projetoId: parseInt(projetoId),
+        tipoAquisicaoId: parseInt(tipoAquisicaoId),
+        metodoAquisicaoId: parseInt(metodoAquisicaoId),
+        etapaAquisicaoId: parseInt(etapaAquisicaoId),
         descricaoObjetoNome,
         valorEstimado,
         responsavel,
         dataLimite: new Date(dataLimite),
-        statusAquisicaoId,
-        secretariaId
+        statusAquisicaoId: parseInt(statusAquisicaoId),
+        secretariaId: parseInt(secretariaId)
       }
     })
+    const etapaAtual = await prisma.etapaAquisicao.findUnique({ where: { id: parseInt(etapaAquisicaoId) } })
 
-    const etapaAtual = await prisma.etapaAquisicao.findUnique({ where: { id: etapaAquisicaoId } })
-    const todosItens = await prisma.checklistItem.findMany({ include: { etapaAquisicao: true } })
-
+    const todasSubEtapas = await prisma.subEtapa.findMany({
+      include: { etapaAquisicao: true }
+    })
     await prisma.aquisicaoChecklist.createMany({
-      data: todosItens.map(item => ({
+      data: todasSubEtapas.map(sub => ({
         aquisicaoCodigo: novaAquisicao.codigo,
-        checklistItemId: item.id,
-        concluido: item.etapaAquisicao.ordem < etapaAtual.ordem
+        subEtapaId: sub.id,
+        concluido: sub.etapaAquisicao.ordem < etapaAtual.ordem
       }))
     })
 
     const aquisicaoCompleta = await prisma.aquisicao.findUnique({
       where: { codigo: novaAquisicao.codigo },
       include: {
+        projeto: true,
         tipoAquisicao: true,
         metodoAquisicao: true,
-        etapaAquisicao: true,
+        etapaAquisicao: {
+          include: { subEtapas: true }
+        },
         statusAquisicao: true,
         secretaria: true,
         aquisicaoChecklists: {
-          include: { checklistItem: { include: { etapaAquisicao: true } } }
+          include: {
+            subEtapa: {
+              include: { etapaAquisicao: true }
+            }
+          }
         }
       }
     })
@@ -142,6 +159,7 @@ const cancelarAquisicao = async (req, res) => {
       where: { codigo },
       data: { cancelado: true, justificativaCancelamento: justificativa },
       include: {
+        projeto: true,
         tipoAquisicao: true,
         metodoAquisicao: true,
         etapaAquisicao: true,
@@ -158,13 +176,23 @@ const cancelarAquisicao = async (req, res) => {
 
 const marcarChecklist = async (req, res) => {
   try {
-    const { codigo, itemId } = req.params
+    const { codigo, subEtapaId } = req.params
     const { concluido } = req.body
 
     await prisma.aquisicaoChecklist.upsert({
-      where: { aquisicaoCodigo_checklistItemId: { aquisicaoCodigo: codigo, checklistItemId: parseInt(itemId) } },
+      where: {
+        aquisicaoCodigo_subEtapaId: {
+          aquisicaoCodigo: codigo,
+          subEtapaId: parseInt(subEtapaId)
+        }
+      },
       update: { concluido, concluidoEm: concluido ? new Date() : null },
-      create: { aquisicaoCodigo: codigo, checklistItemId: parseInt(itemId), concluido, concluidoEm: concluido ? new Date() : null }
+      create: {
+        aquisicaoCodigo: codigo,
+        subEtapaId: parseInt(subEtapaId),
+        concluido,
+        concluidoEm: concluido ? new Date() : null
+      }
     })
 
     const aquisicao = await prisma.aquisicao.findUnique({
@@ -172,23 +200,28 @@ const marcarChecklist = async (req, res) => {
       include: { etapaAquisicao: true }
     })
 
-    const todosItensEtapa = await prisma.checklistItem.findMany({
+    
+    const todasSubEtapasEtapa = await prisma.subEtapa.findMany({
       where: { etapaAquisicaoId: aquisicao.etapaAquisicaoId }
     })
 
     const itensConcluidos = await prisma.aquisicaoChecklist.count({
       where: {
         aquisicaoCodigo: codigo,
-        checklistItemId: { in: todosItensEtapa.map(i => i.id) },
+        subEtapaId: { in: todasSubEtapasEtapa.map(s => s.id) },
         concluido: true
       }
     })
 
     let etapaAtual = aquisicao.etapaAquisicao
 
-    if (concluido && itensConcluidos === todosItensEtapa.length) {
+    if (concluido && itensConcluidos === todasSubEtapasEtapa.length) {
+
       const proximaEtapa = await prisma.etapaAquisicao.findFirst({
-        where: { ordem: { gt: aquisicao.etapaAquisicao.ordem } },
+        where: {
+          tipoAquisicaoId: aquisicao.tipoAquisicaoId,
+          ordem: { gt: aquisicao.etapaAquisicao.ordem }
+        },
         orderBy: { ordem: "asc" }
       })
       if (proximaEtapa) {
@@ -196,42 +229,55 @@ const marcarChecklist = async (req, res) => {
         etapaAtual = proximaEtapa
       }
     } else if (!concluido) {
-      const itemDesmarcado = await prisma.checklistItem.findUnique({
-        where: { id: parseInt(itemId) },
+     
+      const subEtapaDesmarcada = await prisma.subEtapa.findUnique({
+        where: { id: parseInt(subEtapaId) },
         include: { etapaAquisicao: true }
       })
 
-      if (itemDesmarcado.etapaAquisicao.ordem < aquisicao.etapaAquisicao.ordem) {
+      if (subEtapaDesmarcada.etapaAquisicao.ordem < aquisicao.etapaAquisicao.ordem) {
+     
         const etapasPosteriores = await prisma.etapaAquisicao.findMany({
-          where: { ordem: { gt: itemDesmarcado.etapaAquisicao.ordem } }
+          where: {
+            tipoAquisicaoId: aquisicao.tipoAquisicaoId,
+            ordem: { gt: subEtapaDesmarcada.etapaAquisicao.ordem }
+          }
         })
 
-        const itensPosteriores = await prisma.checklistItem.findMany({
+
+        const subEtapasPosteriores = await prisma.subEtapa.findMany({
           where: { etapaAquisicaoId: { in: etapasPosteriores.map(e => e.id) } }
         })
+
 
         await prisma.aquisicaoChecklist.updateMany({
           where: {
             aquisicaoCodigo: codigo,
-            checklistItemId: { in: itensPosteriores.map(i => i.id) }
+            subEtapaId: { in: subEtapasPosteriores.map(s => s.id) }
           },
           data: { concluido: false, concluidoEm: null }
         })
 
         await prisma.aquisicao.update({
           where: { codigo },
-          data: { etapaAquisicaoId: itemDesmarcado.etapaAquisicaoId }
+          data: { etapaAquisicaoId: subEtapaDesmarcada.etapaAquisicaoId }
         })
-        etapaAtual = itemDesmarcado.etapaAquisicao
+        etapaAtual = subEtapaDesmarcada.etapaAquisicao
       }
     }
 
     const aquisicaoAtualizada = await prisma.aquisicao.findUnique({
       where: { codigo },
       include: {
-        etapaAquisicao: true,
+        etapaAquisicao: {
+          include: { subEtapas: true }
+        },
         aquisicaoChecklists: {
-          include: { checklistItem: { include: { etapaAquisicao: true } } }
+          include: {
+            subEtapa: {
+              include: { etapaAquisicao: true }
+            }
+          }
         }
       }
     })
