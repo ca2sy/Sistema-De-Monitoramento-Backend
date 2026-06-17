@@ -3,11 +3,9 @@ const express = require("express");
 const cors = require('cors');
 const app = express();
 
-
 const port = process.env.PORT || 3001;
 
 app.use(express.json());
-
 
 const allowedOrigins = [
   'http://localhost:3000',
@@ -28,7 +26,8 @@ app.use(cors({
 
 app.use("/aquisicoes", require("./routes/aquisicoesRoutes"));
 app.use("/", require("./routes/tabelasApoioRoutes"));
-app.use("/dashboard", require("./routes/dashboardRoutes"))
+app.use("/dashboard", require("./routes/dashboardRoutes"));
+app.use("/projetos", require("./routes/projetosRoutes")); // <-- ADICIONE ESTA LINHA
 
 app.listen(port, () => {
     console.log(`Servidor rodando em http://localhost:${port}`);    
