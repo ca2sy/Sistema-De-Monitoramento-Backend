@@ -17,10 +17,9 @@ model projeto {
   aquisicoes aquisicao[]
 }
 
-
 model tipoAquisicao {
   id         Int              @id @default(autoincrement())
-  nome       String           @db.VarChar(255)
+  nome       String           @db.VarChar(300)
   projetoId  Int
   projeto    projeto          @relation(fields: [projetoId], references: [id])
   etapas     etapaAquisicao[]
@@ -52,8 +51,6 @@ model aquisicao {
   projeto                   projeto              @relation(fields: [projetoId], references: [id])
   tipoAquisicaoId           Int
   tipoAquisicao             tipoAquisicao        @relation(fields: [tipoAquisicaoId], references: [id])
-  metodoAquisicaoId         Int
-  metodoAquisicao           metodoAquisicao      @relation(fields: [metodoAquisicaoId], references: [id])
   etapaAquisicaoId          Int
   etapaAquisicao            etapaAquisicao       @relation(fields: [etapaAquisicaoId], references: [id])
   descricaoObjetoNome       String               @db.VarChar(100)
@@ -81,11 +78,6 @@ model aquisicaoChecklist {
   @@unique([aquisicaoCodigo, subEtapaId])
 }
 
-model metodoAquisicao {
-  id         Int         @id @default(autoincrement())
-  nome       String      @db.VarChar(80)
-  aquisicoes aquisicao[]
-}
 
 model statusAquisicao {
   id         Int         @id @default(autoincrement())
@@ -97,13 +89,10 @@ model secretaria {
   id         Int         @id @default(autoincrement())
   nome       String      @db.VarChar(100)
   aquisicoes aquisicao[]
-  // usuarios   usuario[]
 }
 
 model usuario {
-  id Int @id @default(autoincrement())
-  nome String @db.VarChar(250)
-  senha String @db.VarChar(250)
-  // secretariaId Int
-  // secretaria secretaria @relation(fields: [secretariaId], references: [id])
+  id     Int     @id @default(autoincrement())
+  nome   String  @db.VarChar(250)
+  senha  String  @db.VarChar(250)
 }

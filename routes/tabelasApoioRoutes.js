@@ -3,7 +3,6 @@ const router = express.Router()
 const prisma = require("../prismaClient")
 
 router.get("/tipos-aquisicao",   async (req, res) => { res.json(await prisma.tipoAquisicao.findMany()) })
-router.get("/metodos-aquisicao", async (req, res) => { res.json(await prisma.metodoAquisicao.findMany()) })
 router.get("/etapas-aquisicao", async (req, res) => {
   res.json(await prisma.etapaAquisicao.findMany({
     orderBy: { ordem: "asc" },

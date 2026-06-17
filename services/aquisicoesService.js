@@ -2,10 +2,11 @@ const prisma = require("../prismaClient");
 
 const listarAquisicoes = async (req, res) => {
   try {
-    const { busca, secretariaId, statusId, dataLimite, tipoId } = req.query
+    const { busca, secretariaId, statusId, dataLimite, tipoId, projetoId } = req.query
 
     const aquisicoes = await prisma.aquisicao.findMany({
       where: {
+        ...(projetoId && { projetoId: parseInt(projetoId) }),
         ...(secretariaId && { secretariaId: parseInt(secretariaId) }),
         ...(statusId     && { statusAquisicaoId: parseInt(statusId) }),
         ...(dataLimite   && { dataLimite: { lte: new Date(dataLimite) } }),
@@ -21,7 +22,6 @@ const listarAquisicoes = async (req, res) => {
       include: {
         projeto: true,
         tipoAquisicao: true,
-        metodoAquisicao: true,
         etapaAquisicao: {
           include: { subEtapas: true }
         },
@@ -65,17 +65,18 @@ const listarAquisicoes = async (req, res) => {
 const cadastrarAquisicao = async (req, res) => {
   try {
     const camposObrigatorios = [
-      'codigo', 'projetoId', 'tipoAquisicaoId', 'metodoAquisicaoId', 'etapaAquisicaoId',
+      'codigo', 'projetoId', 'tipoAquisicaoId', 'etapaAquisicaoId',
       'descricaoObjetoNome', 'valorEstimado', 'responsavel', 'dataLimite',
       'statusAquisicaoId', 'secretariaId'
     ]
+    
     const camposFaltando = camposObrigatorios.filter(campo => !req.body[campo])
     if (camposFaltando.length > 0) {
       return res.status(400).json({ error: `Campos obrigatórios faltando: ${camposFaltando.join(', ')}` })
     }
 
     const {
-      codigo, projetoId, tipoAquisicaoId, metodoAquisicaoId, etapaAquisicaoId,
+      codigo, projetoId, tipoAquisicaoId, etapaAquisicaoId,
       descricaoObjetoNome, valorEstimado, responsavel, dataLimite,
       statusAquisicaoId, secretariaId
     } = req.body
@@ -85,7 +86,6 @@ const cadastrarAquisicao = async (req, res) => {
         codigo,
         projetoId: parseInt(projetoId),
         tipoAquisicaoId: parseInt(tipoAquisicaoId),
-        metodoAquisicaoId: parseInt(metodoAquisicaoId),
         etapaAquisicaoId: parseInt(etapaAquisicaoId),
         descricaoObjetoNome,
         valorEstimado,
@@ -95,11 +95,15 @@ const cadastrarAquisicao = async (req, res) => {
         secretariaId: parseInt(secretariaId)
       }
     })
-    const etapaAtual = await prisma.etapaAquisicao.findUnique({ where: { id: parseInt(etapaAquisicaoId) } })
+    
+    const etapaAtual = await prisma.etapaAquisicao.findUnique({ 
+      where: { id: parseInt(etapaAquisicaoId) } 
+    })
 
     const todasSubEtapas = await prisma.subEtapa.findMany({
       include: { etapaAquisicao: true }
     })
+    
     await prisma.aquisicaoChecklist.createMany({
       data: todasSubEtapas.map(sub => ({
         aquisicaoCodigo: novaAquisicao.codigo,
@@ -113,7 +117,6 @@ const cadastrarAquisicao = async (req, res) => {
       include: {
         projeto: true,
         tipoAquisicao: true,
-        metodoAquisicao: true,
         etapaAquisicao: {
           include: { subEtapas: true }
         },
@@ -161,7 +164,6 @@ const cancelarAquisicao = async (req, res) => {
       include: {
         projeto: true,
         tipoAquisicao: true,
-        metodoAquisicao: true,
         etapaAquisicao: true,
         statusAquisicao: true,
         secretaria: true
@@ -200,7 +202,6 @@ const marcarChecklist = async (req, res) => {
       include: { etapaAquisicao: true }
     })
 
-    
     const todasSubEtapasEtapa = await prisma.subEtapa.findMany({
       where: { etapaAquisicaoId: aquisicao.etapaAquisicaoId }
     })
@@ -216,7 +217,6 @@ const marcarChecklist = async (req, res) => {
     let etapaAtual = aquisicao.etapaAquisicao
 
     if (concluido && itensConcluidos === todasSubEtapasEtapa.length) {
-
       const proximaEtapa = await prisma.etapaAquisicao.findFirst({
         where: {
           tipoAquisicaoId: aquisicao.tipoAquisicaoId,
@@ -229,14 +229,12 @@ const marcarChecklist = async (req, res) => {
         etapaAtual = proximaEtapa
       }
     } else if (!concluido) {
-     
       const subEtapaDesmarcada = await prisma.subEtapa.findUnique({
         where: { id: parseInt(subEtapaId) },
         include: { etapaAquisicao: true }
       })
 
       if (subEtapaDesmarcada.etapaAquisicao.ordem < aquisicao.etapaAquisicao.ordem) {
-     
         const etapasPosteriores = await prisma.etapaAquisicao.findMany({
           where: {
             tipoAquisicaoId: aquisicao.tipoAquisicaoId,
@@ -244,11 +242,9 @@ const marcarChecklist = async (req, res) => {
           }
         })
 
-
         const subEtapasPosteriores = await prisma.subEtapa.findMany({
           where: { etapaAquisicaoId: { in: etapasPosteriores.map(e => e.id) } }
         })
-
 
         await prisma.aquisicaoChecklist.updateMany({
           where: {
@@ -289,4 +285,10 @@ const marcarChecklist = async (req, res) => {
   }
 }
 
-module.exports = { listarAquisicoes, cadastrarAquisicao, excluirAquisicao, cancelarAquisicao, marcarChecklist }
+module.exports = { 
+  listarAquisicoes, 
+  cadastrarAquisicao, 
+  excluirAquisicao, 
+  cancelarAquisicao, 
+  marcarChecklist 
+}
