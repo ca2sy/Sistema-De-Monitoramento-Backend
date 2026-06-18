@@ -27,7 +27,7 @@ app.use(cors({
 app.use("/aquisicoes", require("./routes/aquisicoesRoutes"));
 app.use("/", require("./routes/tabelasApoioRoutes"));
 app.use("/dashboard", require("./routes/dashboardRoutes"));
-app.use("/projetos", require("./routes/projetosRoutes")); // <-- ADICIONE ESTA LINHA
+app.use("/projetos", require("./routes/projetosRoutes"));
 
 app.listen(port, () => {
     console.log(`Servidor rodando em http://localhost:${port}`);    
