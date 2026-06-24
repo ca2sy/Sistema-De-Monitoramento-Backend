@@ -1,83 +1,88 @@
-﻿# Sistema de Monitoramento — Back-End
+﻿# Process Monitoring System — Backend
 
-Protótipo de API REST para gerenciamento de processos/aquisições, responsável pelas regras de negócio, persistência de dados e geração dos indicadores exibidos no dashboard.
+REST API responsible for process and acquisition management, business rules, data persistence, and dashboard metrics generation.
 
-## ✨ Funcionalidades
+## ✨ Features
 
-- **CRUD de processos** — cadastro, listagem, cancelamento e exclusão.
-- **Checklist de etapas** — controle de subetapas concluídas por processo, com data de conclusão.
-- **Dashboard agregado** — endpoint único que retorna totais, valores, distribuição por status, tipo e categoria, além de evolução mensal de criação dos processos.
-- **Tabelas de apoio** — gerenciamento de entidades auxiliares (status, tipos, categorias) usadas para classificar os processos.
-- **Modelagem relacional** — projetos, tipos de aquisição, etapas e subetapas organizados hierarquicamente via Prisma ORM.
+* **Process CRUD Operations** — Create, list, cancel, and delete processes.
+* **Stage Checklist Tracking** — Manage completed sub-stages for each process, including completion dates.
+* **Aggregated Dashboard Metrics** — Single endpoint providing totals, values, distributions by status, type, category, and monthly creation trends.
+* **Reference Data Management** — Support tables for statuses, acquisition types, and categories.
+* **Relational Data Modeling** — Projects, acquisition types, stages, and sub-stages organized hierarchically using Prisma ORM.
 
-## 🛠️ Tecnologias
+## 🛠️ Technologies
 
-- [Node.js](https://nodejs.org/) + [Express](https://expressjs.com/) 5
-- [Prisma ORM](https://www.prisma.io/) 7
-- [PostgreSQL](https://www.postgresql.org/)
-- [CORS](https://www.npmjs.com/package/cors) / [dotenv](https://www.npmjs.com/package/dotenv)
+* Node.js
+* Express 5
+* Prisma ORM 7
+* PostgreSQL
+* CORS
+* dotenv
 
-## 📁 Estrutura do projeto
+## 📁 Project Structure
 
-```
+```text
 .
-├── index.js                  # Entry point da API
-├── prismaClient.js           # Instância do Prisma Client
+├── index.js                  # API entry point
+├── prismaClient.js           # Prisma Client instance
 ├── prisma/
-│   ├── schema.prisma         # Modelagem das entidades
-│   └── migrations/           # Histórico de migrações
+│   ├── schema.prisma         # Database schema
+│   └── migrations/           # Migration history
 ├── routes/
 │   ├── aquisicoesRoutes.js
 │   ├── dashboardRoutes.js
 │   ├── projetosRoutes.js
 │   └── tabelasApoioRoutes.js
 └── services/
-    └── aquisicoesService.js  # Regras de negócio das aquisições
+    └── aquisicoesService.js  # Business logic
 ```
 
-## 🗄️ Modelagem de dados
+## 🗄️ Data Model
 
-O domínio é estruturado em torno de:
+The domain is structured around:
 
-- **Projeto** → agrupa diferentes **tipos de aquisição**
-- **Tipo de aquisição** → composto por **etapas**, que por sua vez se dividem em **subetapas**
-- **Aquisição** → instância concreta vinculada a um projeto, tipo, etapa, status e categoria, com checklist de subetapas concluídas
+* **Project** → groups multiple acquisition types
+* **Acquisition Type** → composed of stages, which are further divided into sub-stages
+* **Process (Acquisition)** → a concrete instance linked to a project, acquisition type, stage, status, and category, while maintaining its own completed checklist items
 
-Essa modelagem permite acompanhar o progresso de cada processo de forma granular, etapa por etapa.
+This structure enables detailed process tracking at every stage of execution.
 
-## 🚀 Como rodar localmente
+## 🚀 Running Locally
 
 ```bash
-# Clone o repositório
+# Clone the repository
 git clone https://github.com/ca2sy/Sistema-De-Monitoramento-Backend.git
+
 cd Sistema-De-Monitoramento-Backend
 
-# Instale as dependências
+# Install dependencies
 npm install
 
-# Configure o .env com a string de conexão do PostgreSQL
-# DATABASE_URL="postgresql://usuario:senha@localhost:5432/nome_do_banco"
+# Configure the .env file
+# DATABASE_URL="postgresql://user:password@localhost:5432/database_name"
 
-# Execute as migrações
+# Run migrations
 npx prisma migrate deploy
 
-# Inicie o servidor
+# Start the server
 npm run dev
 ```
 
-A API estará disponível em `http://localhost:3001` (ou na porta configurada).
+The API will be available at `http://localhost:3001` (or the configured port).
 
-> Este back-end serve dados para o [Sistema de Monitoramento — Front-End](https://github.com/ca2sy/Sistema-De-Monitoramento-FrontEnd).
+> This backend provides data for the Process Monitoring System frontend.
 
-## 📡 Principais endpoints
+## 📡 Main Endpoints
 
-| Método | Rota | Descrição |
-|---|---|---|
-| `GET` | `/aquisicoes` | Lista todos os processos |
-| `POST` | `/aquisicoes` | Cadastra um novo processo |
-| `DELETE` | `/aquisicoes/:codigo` | Remove um processo |
-| `PATCH` | `/aquisicoes/:codigo/checklist/:subEtapaId` | Marca/desmarca item do checklist |
-| `PATCH` | `/aquisicoes/:codigo/cancelar` | Cancela um processo |
-| `GET` | `/dashboard` | Retorna indicadores agregados |
+| Method | Endpoint                                  | Description                |
+| ------ | ----------------------------------------- | -------------------------- |
+| GET    | /aquisicoes                               | Retrieve all processes     |
+| POST   | /aquisicoes                               | Create a new process       |
+| DELETE | /aquisicoes/:codigo                       | Delete a process           |
+| PATCH  | /aquisicoes/:codigo/checklist/:subEtapaId | Toggle a checklist item    |
+| PATCH  | /aquisicoes/:codigo/cancelar              | Cancel a process           |
+| GET    | /dashboard                                | Retrieve dashboard metrics |
 
+## 📌 Status
 
+Personal project under active development, created for learning purposes and full-stack software engineering practice.
